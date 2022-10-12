@@ -8,9 +8,11 @@ import hmac
 import hashlib
 import time
 import logging
+import os
 import json
 import boto3
 from slack_bolt import App
+from slack_sdk import WebClient
 from slack_bolt.adapter.aws_lambda import SlackRequestHandler
 from slack_bolt.adapter.socket_mode import SocketModeHandler
 
@@ -18,11 +20,25 @@ logging.basicConfig(
     level=logging.INFO,
     format=f'%(asctime)s %(levelname)s %(message)s'
 )
+client = WebClient(token=os.environ.get("SLACK_BOT_TOKEN"))
+logger = logging.getLogger("Sakshi")
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 logger.debug('The script is starting.')
 logger.info('Connecting to SlackApp...')
 ssmclient=boto3.client('ssm')
+user_id = "users"
+
+try:
+    result = client.users_info(
+        user='user_id'
+    )
+    logger.info(result)
+
+except SlackApiError as e:
+    logger.error("Error fetching conversations:{}".format(e))
+
 # process_before_response must be True when running on FaaS
 sign_secret = ssmclient.get_parameter(Name='PRBSlackSigningSecret', WithDecryption=True)['Parameter']['Value']
 app = App(process_before_response=True,
